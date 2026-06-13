@@ -1,0 +1,13 @@
+# Node (backend)
+node_modules/
+.env
+.DS_Store
+
+# Maven (Apache server starter))
+hapi-fhir-jpaserver-starter/target/
+hapi-fhir-jpaserver-starter/.mvn/
+
+# Gradle (Synthea data generator)
+synthea/.gradle/
+synthea/build/
+synthea/output/
