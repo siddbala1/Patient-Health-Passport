@@ -1,3 +1,4 @@
+from controllers.normalizer import normalize_records
 import os
 import json
 import base64
@@ -18,7 +19,8 @@ def redirect_to_login():
         ).json()
 
         authorization_endpoint = smart_config["authorization_endpoint"]
-
+    ##Constructs parameters for the authorization endpoint and 
+    ##What the smart configuration is using abstract defintiions
         # Build the login URL
         params = {
             "response_type": "code",
@@ -41,6 +43,10 @@ def redirect_to_login():
 
 
 # Step 2: Handle callback after patient logs in
+##A callback is a function that is called after a user has logged in to a system. 
+##In this case, the callback function is called after the patient logs in to the hospital's system.
+##The callback function is responsible for exchanging the authorization code for an access token and retrieving the 
+##patient's records from the FHIR server.
 def handle_callback():
     try:
         code = request.args.get("code")
@@ -63,6 +69,7 @@ def handle_callback():
                 "client_id": config["clientId"],
                 "redirect_uri": config["redirectUri"]
             },
+            ##data is a dictionary that contains the parameters for the token exchange.
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         ).json()
 
@@ -80,7 +87,7 @@ def handle_callback():
                 payload += "=" * (-len(payload) % 4)  # fix padding
                 decoded = json.loads(base64.b64decode(payload))
                 fhir_user = decoded.get("fhirUser")
-
+            ##Exploits the fact that the token is composed of three parts separated by dots (header, payload, signature).
             patient_id = fhir_user.split("/")[1] if fhir_user else None
             print(f"Extracted patient ID: {patient_id}")
 
@@ -175,3 +182,51 @@ def query_local_fhir():
     except Exception as e:
         print(f"Error querying local FHIR: {e}")
         return jsonify({"error": "Failed to query local FHIR server"}), 500
+
+# Query local HAPI FHIR and return NORMALIZED (clean) data
+def query_local_normalized():
+    try:
+        name = request.args.get("name")
+
+        if not name:
+            return jsonify({
+                "error": "Please provide a patient name",
+                "example": "http://localhost:3000/local-clean?name=Walton"
+            }), 400
+
+        fhir_url = os.getenv("HAPI_FHIR_URL")
+
+        patient_search = requests.get(f"{fhir_url}/Patient?name={name}").json()
+
+        if patient_search.get("total", 0) == 0:
+            return jsonify({"error": f"No patient found with name: {name}"}), 404
+
+        patient = patient_search["entry"][0]["resource"]
+        patient_id = patient["id"]
+
+        conditions = requests.get(f"{fhir_url}/Condition?patient={patient_id}").json()
+        medications = requests.get(f"{fhir_url}/MedicationRequest?patient={patient_id}").json()
+        observations = requests.get(f"{fhir_url}/Observation?patient={patient_id}").json()
+
+        # Assemble raw, then run it through the normalization seam
+        raw = {
+            "source": "Local HAPI FHIR Server",
+            "patientId": patient_id,
+            "records": {
+                "patient": patient,
+                "conditions": conditions,
+                "medications": medications,
+                "observations": observations,
+            }
+        }
+
+        clean = normalize_records(raw)
+        return jsonify(clean)
+
+    except Exception as e:
+        print(f"Error in query_local_normalized: {e}")
+        return jsonify({"error": "Failed to query and normalize"}), 500
+
+##serves as a new endpoint that queries the local HAPI FHIR server for a patient by name, 
+##retrieves their records, and then normalizes the data before returning it to the frontend. 
+##This allows the frontend to receive a clean, consistent structure regardless of the quirks in the raw FHIR data.
