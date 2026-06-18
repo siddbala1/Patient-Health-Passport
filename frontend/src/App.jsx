@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { fetchPatient } from './api';
+import { useState, useEffect } from 'react';
+import { fetchPatient, fetchSession, getSmartConnectUrl } from './api';
+import logo from './assets/logo.avif';
 import PatientCard from './components/PatientCard';
 import ResourceTable from './components/ResourceTable';
 import Tabs from './components/Tabs';
@@ -35,6 +36,22 @@ export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // On load, check if we were redirected back from SMART OAuth
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session');
+    if (!sessionId) return;
+
+    // Clean the URL immediately
+    window.history.replaceState({}, '', window.location.pathname);
+
+    setLoading(true);
+    fetchSession(sessionId)
+      .then(setData)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -128,7 +145,7 @@ export default function App() {
       <header className="app__header">
         <div className="app__header-inner">
           <div className="app__logo">
-            <span className="app__logo-icon">⚕</span>
+            <img src={logo} alt="Sikh Health Network" className="app__logo-icon" />
             <div>
               <h1>Patient Health Passport</h1>
               <p>Sikh Health Network</p>
@@ -138,19 +155,24 @@ export default function App() {
       </header>
 
       <main className="app__main">
-        <form className="search-form" onSubmit={handleSearch}>
-          <input
-            className="search-form__input"
-            type="text"
-            placeholder="Enter patient name (e.g. Walton)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            disabled={loading}
-          />
-          <button className="search-form__btn" type="submit" disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
-          </button>
-        </form>
+        <div className="search-row">
+          <form className="search-form" onSubmit={handleSearch}>
+            <input
+              className="search-form__input"
+              type="text"
+              placeholder="Enter patient name (e.g. Walton)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={loading}
+            />
+            <button className="search-form__btn" type="submit" disabled={loading}>
+              {loading ? 'Searching…' : 'Search'}
+            </button>
+          </form>
+          <a className="smart-btn" href={getSmartConnectUrl()}>
+            Connect via SMART
+          </a>
+        </div>
 
         {error && (
           <div className="alert alert--error">

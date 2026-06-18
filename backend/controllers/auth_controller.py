@@ -2,9 +2,15 @@ from controllers.normalizer import normalize_records
 import os
 import json
 import base64
+import uuid
 import requests
 from flask import request, jsonify, redirect
 from config.smart import SMART_CONFIG
+
+# In-memory session store: { session_id: normalized_patient_data }
+_sessions = {}
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 
 # Step 1: Redirect patient to hospital login page
@@ -43,24 +49,18 @@ def redirect_to_login():
 
 
 # Step 2: Handle callback after patient logs in
-##A callback is a function that is called after a user has logged in to a system. 
-##In this case, the callback function is called after the patient logs in to the hospital's system.
-##The callback function is responsible for exchanging the authorization code for an access token and retrieving the 
-##patient's records from the FHIR server.
 def handle_callback():
     try:
         code = request.args.get("code")
         state = request.args.get("state", "sandbox")
         config = SMART_CONFIG[state]
 
-        # Fetch token endpoint
         smart_config = requests.get(
             f"{config['fhirUrl']}/.well-known/smart-configuration"
         ).json()
 
         token_endpoint = smart_config["token_endpoint"]
 
-        # Exchange code for access token
         token_response = requests.post(
             token_endpoint,
             data={
@@ -69,54 +69,53 @@ def handle_callback():
                 "client_id": config["clientId"],
                 "redirect_uri": config["redirectUri"]
             },
-            ##data is a dictionary that contains the parameters for the token exchange.
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         ).json()
 
         print("Full token response:", token_response)
 
         access_token = token_response.get("access_token")
-        patient = token_response.get("patient")
+        patient_id = token_response.get("patient")
 
-        # If patient ID not returned directly, extract from token
-        if not patient:
+        # Extract patient ID from JWT if not returned directly
+        if not patient_id:
             fhir_user = token_response.get("fhirUser")
             if not fhir_user:
-                # Decode the JWT middle section to find fhirUser
                 payload = access_token.split(".")[1]
-                payload += "=" * (-len(payload) % 4)  # fix padding
+                payload += "=" * (-len(payload) % 4)
                 decoded = json.loads(base64.b64decode(payload))
                 fhir_user = decoded.get("fhirUser")
-            ##Exploits the fact that the token is composed of three parts separated by dots (header, payload, signature).
             patient_id = fhir_user.split("/")[1] if fhir_user else None
-            print(f"Extracted patient ID: {patient_id}")
 
-            if patient_id:
-                records = pull_patient_records(patient_id, access_token, config["fhirUrl"])
-                return jsonify({
-                    "message": "Successfully connected and retrieved records",
-                    "patientId": patient_id,
-                    "records": records
-                })
+        if not patient_id:
+            return jsonify({"error": "Could not determine patient ID from token"}), 400
 
-            return jsonify({
-                "message": "Authorization successful",
-                "access_token": access_token,
-                "note": "Patient ID not returned by sandbox - token exchange worked correctly"
-            })
+        print(f"Token received for patient: {patient_id}")
 
-        print(f"Token received for patient: {patient}")
-        records = pull_patient_records(patient, access_token, config["fhirUrl"])
+        raw_records = pull_patient_records(patient_id, access_token, config["fhirUrl"])
 
-        return jsonify({
-            "message": "Successfully connected and retrieved records",
-            "patientId": patient,
-            "records": records
-        })
+        raw = {
+            "source": config.get("name", "SMART on FHIR"),
+            "patientId": patient_id,
+            "records": raw_records,
+        }
+        clean = normalize_records(raw)
+
+        session_id = str(uuid.uuid4())
+        _sessions[session_id] = clean
+
+        return redirect(f"{FRONTEND_URL}?session={session_id}")
 
     except Exception as e:
         print(f"Error during callback: {e}")
         return jsonify({"error": "Failed to complete authorization"}), 500
+
+
+def get_session(session_id):
+    data = _sessions.get(session_id)
+    if not data:
+        return jsonify({"error": "Session not found or expired"}), 404
+    return jsonify(data)
 
 
 # Step 3: Pull FHIR records using access token
@@ -153,14 +152,24 @@ def query_local_fhir():
 
         fhir_url = os.getenv("HAPI_FHIR_URL")
 
-        patient_search = requests.get(f"{fhir_url}/Patient?name={name}").json()
+        parts = name.strip().split()
+        patient = None
+        if len(parts) >= 2:
+            # Try given + family search first
+            given, family = parts[0], parts[-1]
+            res = requests.get(f"{fhir_url}/Patient?given={given}&family={family}").json()
+            if res.get("total", 0) > 0:
+                patient = res["entry"][0]["resource"]
 
-        if patient_search.get("total", 0) == 0:
+        if not patient:
+            res = requests.get(f"{fhir_url}/Patient?name={parts[0]}").json()
+            if res.get("total", 0) > 0:
+                patient = res["entry"][0]["resource"]
+
+        if not patient:
             return jsonify({"error": f"No patient found with name: {name}"}), 404
 
-        patient = patient_search["entry"][0]["resource"]
         patient_id = patient["id"]
-
         print(f"Found local patient: {patient['name'][0]['family']}, ID: {patient_id}")
 
         conditions = requests.get(f"{fhir_url}/Condition?patient={patient_id}").json()
@@ -196,19 +205,28 @@ def query_local_normalized():
 
         fhir_url = os.getenv("HAPI_FHIR_URL")
 
-        patient_search = requests.get(f"{fhir_url}/Patient?name={name}").json()
+        parts = name.strip().split()
+        patient = None
+        if len(parts) >= 2:
+            given, family = parts[0], parts[-1]
+            res = requests.get(f"{fhir_url}/Patient?given={given}&family={family}").json()
+            if res.get("total", 0) > 0:
+                patient = res["entry"][0]["resource"]
 
-        if patient_search.get("total", 0) == 0:
+        if not patient:
+            res = requests.get(f"{fhir_url}/Patient?name={parts[0]}").json()
+            if res.get("total", 0) > 0:
+                patient = res["entry"][0]["resource"]
+
+        if not patient:
             return jsonify({"error": f"No patient found with name: {name}"}), 404
 
-        patient = patient_search["entry"][0]["resource"]
         patient_id = patient["id"]
 
         conditions = requests.get(f"{fhir_url}/Condition?patient={patient_id}").json()
         medications = requests.get(f"{fhir_url}/MedicationRequest?patient={patient_id}").json()
         observations = requests.get(f"{fhir_url}/Observation?patient={patient_id}").json()
 
-        # Assemble raw, then run it through the normalization seam
         raw = {
             "source": "Local HAPI FHIR Server",
             "patientId": patient_id,

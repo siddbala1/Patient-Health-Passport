@@ -8,3 +8,16 @@ export async function fetchPatient(name) {
   }
   return res.json();
 }
+
+export async function fetchSession(sessionId) {
+  const res = await fetch(`${BASE_URL}/session/${sessionId}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Session error ${res.status}`);
+  }
+  return res.json();
+}
+
+export function getSmartConnectUrl() {
+  return `${BASE_URL}/connect?source=sandbox`;
+}

@@ -36,8 +36,8 @@ body {
 }
 
 .app__logo-icon {
-  font-size: 2rem;
-  line-height: 1;
+  height: 48px;
+  width: auto;
 }
 
 .app__logo h1 {
@@ -61,11 +61,20 @@ body {
   width: 100%;
 }
 
-/* ── Search form ─────────────────────────────────────── */
+/* ── Search row ──────────────────────────────────────── */
+.search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
 .search-form {
   display: flex;
   gap: 10px;
-  margin-bottom: 32px;
+  flex: 1;
+  min-width: 0;
 }
 
 .search-form__input {
@@ -103,6 +112,27 @@ body {
 .search-form__btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ── SMART connect button ────────────────────────────── */
+.smart-btn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: #fff;
+  color: #c97c1a;
+  border: 2px solid #c97c1a;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.smart-btn:hover {
+  background: #c97c1a;
+  color: #fff;
 }
 
 /* ── Alerts ──────────────────────────────────────────── */
