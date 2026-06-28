@@ -21,3 +21,9 @@ export async function fetchSession(sessionId) {
 export function getSmartConnectUrl() {
   return `${BASE_URL}/connect?source=sandbox`;
 }
+
+//Exports created functions to be used 
+// in files like app.js and other components that
+// need to make API calls.  If the link changes, 
+// it can be updated here and all components will use
+//  the new link.
