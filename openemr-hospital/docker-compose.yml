@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: BEB+OftjNyaNn/723WM93Ja4nttACDmv
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASSWORD: g6wmxy/6OoqHctRSWzAl5kXHCViIleLl
+    volumes:
+      - mysql_data_hospital:/var/lib/mysql
+#Make sure to use the SAME passwords for MYSQL_ROOT_PASSWORD and
+#MYSQL_ROOT_PASS in the openemr service below, and same with
+##MYSQL_PASSWORD and MYSQL_PASS.
+##If you change any of these passwords, make sure to change them in all three places.
+  openemr:
+    image: openemr/openemr:7.0.2
+    restart: unless-stopped
+    ports:
+      - "8301:80"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: BEB+OftjNyaNn/723WM93Ja4nttACDmv
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASS: g6wmxy/6OoqHctRSWzAl5kXHCViIleLl
+      OE_USER: siddbalaOpenEMRHOSPITAL
+      OE_PASS: 7lIapGWzwFPLdtJS8tjB
+    volumes:
+      - openemr_sites_hospital:/var/www/localhost/htdocs/openemr/sites
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data_hospital:
+  openemr_sites_hospital:

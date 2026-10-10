@@ -61,57 +61,13 @@ body {
   width: 100%;
 }
 
-/* ── Search row ──────────────────────────────────────── */
+/* ── Action row ──────────────────────────────────────── */
 .search-row {
   display: flex;
   gap: 12px;
   margin-bottom: 32px;
   align-items: stretch;
   flex-wrap: wrap;
-}
-
-.search-form {
-  display: flex;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.search-form__input {
-  flex: 1;
-  padding: 10px 16px;
-  font-size: 1rem;
-  border: 1.5px solid #c9d4e0;
-  border-radius: 8px;
-  background: #fff;
-  transition: border-color 0.15s;
-  outline: none;
-}
-
-.search-form__input:focus {
-  border-color: #c97c1a;
-}
-
-.search-form__btn {
-  padding: 10px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  background: #c97c1a;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.search-form__btn:hover:not(:disabled) {
-  background: #b06a10;
-}
-
-.search-form__btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* ── SMART connect button ────────────────────────────── */
@@ -312,6 +268,82 @@ body {
 
 .resource-table tbody tr:hover td {
   background: #f9fbfd;
+}
+
+/* ── Editable resource table ─────────────────────────── */
+.row-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1.5px solid #c9d4e0;
+  background: #fff;
+  color: #1a2332;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: #c97c1a;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+
+.btn--primary {
+  background: #c97c1a;
+  border-color: #c97c1a;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #b06a10;
+}
+
+.btn--danger {
+  color: #b91c1c;
+  border-color: #f5c6c6;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #fff0f0;
+}
+
+.btn--add {
+  margin-top: 12px;
+}
+
+.resource-table input,
+.resource-table select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  border: 1.5px solid #c9d4e0;
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+}
+
+.resource-table input:focus,
+.resource-table select:focus {
+  border-color: #c97c1a;
+}
+
+.edit-error {
+  margin-bottom: 12px;
 }
 
 /* ── Empty states ────────────────────────────────────── */
