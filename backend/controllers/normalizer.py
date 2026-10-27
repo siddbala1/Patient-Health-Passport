@@ -4,6 +4,7 @@
 # This protects the frontend from FHIR's structural quirks
 # and from differences between data sources.
 
+import base64
 import re
 import requests
 
@@ -257,6 +258,55 @@ def normalize_immunizations(bundle):
     return results
 
 
+def normalize_clinical_notes(bundle):
+    """Flatten a FHIR DocumentReference bundle of clinical notes into raw
+    note rows for Store 1. OpenEMR delivers the text inline as a base64
+    text/plain attachment (content[].attachment.data); anything else (PDFs,
+    URL-only attachments) is skipped for now rather than stored half-read."""
+    results = []
+    for entry in bundle.get("entry", []) if bundle else []:
+        resource = entry.get("resource", {})
+        if resource.get("resourceType") != "DocumentReference":
+            continue  # e.g. an OperationOutcome entry
+        if resource.get("status") not in (None, "current"):
+            continue
+
+        text = None
+        for content in resource.get("content", []):
+            attachment = content.get("attachment", {})
+            data = attachment.get("data")
+            if not data:
+                continue
+            try:
+                decoded = base64.b64decode(data).decode("utf-8", errors="replace")
+            except Exception:
+                continue
+            ctype = attachment.get("contentType", "")
+            if ctype.startswith("text/html"):
+                decoded = _TAG_RE.sub("", decoded)
+            elif not ctype.startswith("text/"):
+                continue
+            text = decoded.strip() or None
+            if text:
+                break
+        if not text:
+            continue
+
+        coding = _safe_get(resource, "type", "coding", 0, default={})
+        title = (_safe_get(resource, "type", "text")
+                 or (coding.get("display") or "").strip()
+                 or "Clinical note")
+        date = resource.get("date")
+        results.append({
+            "doc_id": resource.get("id"),
+            "title": title,
+            "note_date": date[:10] if date else None,
+            "note_type": coding.get("code"),
+            "note_text": text,
+        })
+    return results
+
+
 def normalize_procedures(bundle):
     """Flatten a FHIR Procedure bundle. Read-only, same reason as
     immunizations (Standard API returns 404 for procedure writes)."""
@@ -294,6 +344,7 @@ def normalize_records(raw):
         "allergies": normalize_allergies(records.get("allergies")),
         "immunizations": normalize_immunizations(records.get("immunizations")),
         "procedures": normalize_procedures(records.get("procedures")),
+        "clinical_notes": normalize_clinical_notes(records.get("documents")),
     }
 #Last function allows an easier transition to using AI 
 # for more hospital-hospital normalization in the future, by providing a single clean structure 

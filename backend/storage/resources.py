@@ -94,4 +94,13 @@ RESOURCES = {
         # Read-only, permanently: same as immunizations — Standard API 404s
         # for procedure writes. One-way OpenEMR → Passport.
     },
+    "clinical_notes": {
+        "key": ["doc_id"],
+        "values": ["title", "note_date", "note_type", "note_text"],
+        # Read-only, one-way OpenEMR → Passport (FHIR DocumentReference). The
+        # raw note text is an input to the plain-language explanation, not
+        # something the UI shows, so get_patient_record() skips "internal"
+        # tables — the frontend never receives note_text.
+        "internal": True,
+    },
 }

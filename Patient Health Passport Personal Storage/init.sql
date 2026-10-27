@@ -95,3 +95,22 @@ CREATE TABLE IF NOT EXISTS procedures (
     ended_at     TIMESTAMP NULL DEFAULT NULL,
     INDEX idx_procedures_patient_active (patient_id, ended_at)
 );
+
+-- Clinical notes (progress notes / SOAP text): read-only, OpenEMR -> Passport
+-- via FHIR DocumentReference. Raw note text lives here; the UI never shows it
+-- directly — an LLM-generated plain-language explanation is built from these
+-- rows. doc_id is the FHIR DocumentReference id (stable identity); an edited
+-- note arrives with changed note_text and is versioned like every other table.
+CREATE TABLE IF NOT EXISTS clinical_notes (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    patient_id   VARCHAR(64) NOT NULL,
+    doc_id       VARCHAR(64) NOT NULL,
+    title        VARCHAR(255),
+    note_date    VARCHAR(32),
+    note_type    VARCHAR(64),
+    note_text    MEDIUMTEXT,
+    openemr_id   VARCHAR(64) NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at     TIMESTAMP NULL DEFAULT NULL,
+    INDEX idx_clinical_notes_patient_active (patient_id, ended_at)
+);

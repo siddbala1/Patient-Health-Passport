@@ -80,6 +80,8 @@ def get_patient_record(patient_id):
             "phone": info["phone"],
         },
     }
-    for table in RESOURCES:
+    for table, spec in RESOURCES.items():
+        if spec.get("internal"):
+            continue  # stored for backend use only (e.g. raw clinical notes)
         record[table] = get_resource(patient_id, table)
     return record

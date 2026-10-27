@@ -151,6 +151,8 @@ def pull_patient_records(patient_id, token, fhir_url):
     allergies = requests.get(f"{fhir_url}/AllergyIntolerance?patient={patient_id}", headers=headers).json()
     immunizations = requests.get(f"{fhir_url}/Immunization?patient={patient_id}", headers=headers).json()
     procedures = requests.get(f"{fhir_url}/Procedure?patient={patient_id}", headers=headers).json()
+    # Clinical notes (progress notes etc.) come back as DocumentReference.
+    documents = requests.get(f"{fhir_url}/DocumentReference?patient={patient_id}", headers=headers).json()
 
     return {
         "patient": patient,
@@ -160,7 +162,9 @@ def pull_patient_records(patient_id, token, fhir_url):
         "allergies": allergies,
         "immunizations": immunizations,
         "procedures": procedures,
+        "documents": documents,
     }
+
 
 # query_local_fhir() and query_local_normalized() (direct, unauthenticated
 # queries against a local HAPI FHIR server by patient name, backing the

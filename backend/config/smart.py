@@ -41,7 +41,7 @@ SMART_CONFIG = {
         "clientId": os.getenv("OPENEMR_HOSPITAL_CLIENT_ID"),
         "clientSecret": os.getenv("OPENEMR_HOSPITAL_CLIENT_SECRET"),
         "redirectUri": f"{BASE_URL}/callback",
-        "scope": "openid fhirUser launch/patient offline_access patient/Patient.read patient/Condition.read patient/Observation.read patient/MedicationRequest.read patient/AllergyIntolerance.read patient/Immunization.read patient/Procedure.read"
+        "scope": "openid fhirUser launch/patient offline_access patient/Patient.read patient/Condition.read patient/Observation.read patient/MedicationRequest.read patient/AllergyIntolerance.read patient/Immunization.read patient/Procedure.read patient/DocumentReference.read patient/Binary.read patient/Encounter.read"
     },
     # Write-back path: same instance as openemr_hospital (patients live on
     # :8301), but a separate registered OAuth2 client using the password
