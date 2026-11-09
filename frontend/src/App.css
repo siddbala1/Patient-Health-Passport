@@ -363,3 +363,75 @@ body {
   padding: 60px 24px;
   color: #6b7f96;
 }
+
+/* ── Visit notes (plain-language explanations) ───────── */
+.notes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.note-card {
+  background: #fff;
+  border: 1px solid #dde5ef;
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+
+.note-card__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+}
+
+.note-card__date {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #6b7f96;
+}
+
+.note-card__summary {
+  line-height: 1.6;
+}
+
+.note-card__status {
+  color: #6b7f96;
+}
+
+.note-card__heading {
+  margin: 20px 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7f96;
+}
+
+.note-card__terms > div {
+  padding: 8px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.note-card__terms dt {
+  font-weight: 600;
+}
+
+.note-card__terms dd {
+  color: #3d4f66;
+}
+
+.note-card__steps {
+  padding-left: 20px;
+}
+
+.note-card__steps li {
+  margin: 4px 0;
+}
+
+.notes-panel__disclaimer {
+  font-size: 0.8rem;
+  color: #6b7f96;
+}

@@ -4,6 +4,7 @@ import logo from './assets/logo.avif';
 import PatientCard from './components/PatientCard';
 import ResourceTable from './components/ResourceTable';
 import EditableResourceTable from './components/EditableResourceTable';
+import NotesPanel from './components/NotesPanel';
 import Tabs from './components/Tabs';
 import './App.css';
 
@@ -238,6 +239,10 @@ export default function App() {
           emptyMessage="No procedures on record."
         />
       ),
+    },
+    {
+      label: 'Visit Notes',
+      content: <NotesPanel sessionId={sessionId} />,
     },
     {
       label: 'Vitals',

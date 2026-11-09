@@ -62,6 +62,26 @@ def get_resource_row(patient_id, table, row_id):
         conn.close()
 
 
+def get_notes_with_explanations(patient_id):
+    """A patient's current clinical notes, newest first, each with its stored
+    explanation (None if not generated yet). Includes the raw note_text for
+    backend use only — callers must never return it to the frontend."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT n.id, n.title, n.note_date, n.note_text, e.explanation "
+            "FROM clinical_notes n "
+            "LEFT JOIN note_explanations e ON e.note_id = n.id "
+            "WHERE n.patient_id = %s AND n.ended_at IS NULL "
+            "ORDER BY n.note_date DESC, n.id DESC",
+            (patient_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
 def get_patient_record(patient_id):
     """Assemble a patient's current record from Store 1, shaped like
     normalize_records()'s output so the UI doesn't need to change."""

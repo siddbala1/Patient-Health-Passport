@@ -114,3 +114,18 @@ CREATE TABLE IF NOT EXISTS clinical_notes (
     ended_at     TIMESTAMP NULL DEFAULT NULL,
     INDEX idx_clinical_notes_patient_active (patient_id, ended_at)
 );
+
+-- LLM-generated plain-language explanation of one clinical_notes row (see
+-- backend/llm/note_explainer.py). Keyed by the note row's id, not doc_id, so
+-- an edited note (a new clinical_notes row) gets a fresh explanation and the
+-- old one stays attached to the old text. Only explanations that passed the
+-- number check are stored. `explanation` is JSON: {summary, terms, next_steps}.
+CREATE TABLE IF NOT EXISTS note_explanations (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    patient_id   VARCHAR(64) NOT NULL,
+    note_id      BIGINT NOT NULL,
+    explanation  MEDIUMTEXT NOT NULL,
+    model        VARCHAR(64) NOT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_note_explanations_note (note_id)
+);

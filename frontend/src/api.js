@@ -14,6 +14,18 @@ export async function fetchSession(sessionId) {
   return res.json();
 }
 
+// Plain-language explanations of the patient's clinical notes. The server
+// generates each one on first view (a few seconds), then serves it from
+// Store 1; the raw note text is never sent to the browser.
+export async function fetchNotes(sessionId) {
+  const res = await fetch(`${BASE_URL}/session/${sessionId}/notes`);
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.error || `Notes error ${res.status}`);
+  }
+  return payload.notes;
+}
+
 export function getSmartConnectUrl() {
   return `${BASE_URL}/connect?source=openemr_hospital`;
 }

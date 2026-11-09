@@ -14,8 +14,10 @@ PORT = int(os.getenv("PORT", 3000))
 # Register routes
 from routes.auth import auth_bp
 from routes.records import records_bp
+from routes.notes import notes_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(records_bp)
+app.register_blueprint(notes_bp)
 
 # Basic health check endpoint
 @app.route("/health")

@@ -3,6 +3,7 @@
 # clinical tables: an edited/replaced row is never deleted or overwritten,
 # it's marked ended_at and a new row is appended in its place.
 
+import json
 from datetime import datetime, timezone
 from storage.db import get_connection
 from storage.resources import RESOURCES
@@ -180,6 +181,23 @@ def save_normalized_records(patient_id, clean):
     save_patient_info(patient_id, clean.get("source"), clean.get("patient"))
     for table in RESOURCES:
         save_resource(patient_id, table, clean.get(table) or [])
+
+
+def save_note_explanation(patient_id, note_id, explanation, model):
+    """Store the explanation generated for one clinical_notes row. INSERT
+    IGNORE: if two requests raced to generate the same note's explanation,
+    the first one wins and the second is a no-op."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT IGNORE INTO note_explanations (patient_id, note_id, explanation, model) "
+            "VALUES (%s, %s, %s, %s)",
+            (patient_id, note_id, json.dumps(explanation), model),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _end_row(table, patient_id, row_id):
